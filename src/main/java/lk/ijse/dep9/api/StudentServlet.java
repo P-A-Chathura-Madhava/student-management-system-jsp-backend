@@ -6,6 +6,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import lk.ijse.dep9.api.util.HttpServlet2;
+import lk.ijse.dep9.db.ConnectionPool;
 import lk.ijse.dep9.dto.StudentDTO;
 
 import java.io.IOException;
@@ -29,8 +30,11 @@ public class StudentServlet extends HttpServlet2 {
     private void loadAllStudents(HttpServletResponse response) throws IOException {
         /*response.getWriter().println("<h1>All Members</h1>");*/ /* Step 03 */
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            try(Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/sms", "root", "123@Ctech")) {
+            ConnectionPool pool = (ConnectionPool) getServletContext().getAttribute("pool");
+            Connection connection = pool.getConnection();
+            /* Line 23 */
+            /*Class.forName("com.mysql.cj.jdbc.Driver");
+            try(Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/sms", "root", "123@Ctech")) {*/
 
                 Statement stm = connection.createStatement();
                 ResultSet rst = stm.executeQuery("SELECT * FROM student");
@@ -46,8 +50,12 @@ public class StudentServlet extends HttpServlet2 {
                 }
                 Jsonb jsonb = JsonbBuilder.create();
                 String json = jsonb.toJson(students);
-                response.setContentType("application/json");
-                response.getWriter().println(json);
+                jsonb.toJson(students, response.getWriter());
+
+
+                /*Step 05*/
+                /*response.setContentType("application/json");
+                response.getWriter().println(json);*/
 
 
                 /* Step 04 */
@@ -74,8 +82,8 @@ public class StudentServlet extends HttpServlet2 {
 
             /*} catch (SQLException e) {
                 throw new RuntimeException(e);*/
-            }
-        } catch (ClassNotFoundException | SQLException e) {
+//            }
+        } catch (SQLException e) {
             /*throw new RuntimeException(e);*/
             e.printStackTrace();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to load members");

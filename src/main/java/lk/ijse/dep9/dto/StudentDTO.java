@@ -1,7 +1,10 @@
 package lk.ijse.dep9.dto;
 
+import jakarta.json.bind.annotation.JsonbPropertyOrder;
+
 import java.io.Serializable;
 
+@JsonbPropertyOrder({"id", "name", "address", "contact"}) /* Not important just for describing */
 public class StudentDTO implements Serializable {
     private String id;
     private String name;
