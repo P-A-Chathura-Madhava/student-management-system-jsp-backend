@@ -48,6 +48,9 @@ public class StudentServlet extends HttpServlet2 {
                     StudentDTO dto = new StudentDTO(id, name, address, contact);
                     students.add(dto);
                 }
+
+                pool.releaseConnection(connection);
+
                 Jsonb jsonb = JsonbBuilder.create();
                 String json = jsonb.toJson(students);
                 jsonb.toJson(students, response.getWriter());
