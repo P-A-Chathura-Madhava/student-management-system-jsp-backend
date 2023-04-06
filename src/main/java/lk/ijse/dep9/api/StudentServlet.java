@@ -1,5 +1,6 @@
 package lk.ijse.dep9.api;
 
+import jakarta.annotation.Resource;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.servlet.*;
@@ -8,13 +9,32 @@ import jakarta.servlet.annotation.*;
 import lk.ijse.dep9.api.util.HttpServlet2;
 import lk.ijse.dep9.db.ConnectionPool;
 import lk.ijse.dep9.dto.StudentDTO;
+import org.apache.commons.dbcp2.BasicDataSource;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 
-@WebServlet(name = "StudentServlet", value = "/students/*")
+@WebServlet(name = "StudentServlet", value = "/students/*", loadOnStartup = 0)
 public class StudentServlet extends HttpServlet2 {
+
+    @Resource(lookup = "java:/comp/env/jdbc/sms")
+    private DataSource pool;
+
+    /* Only use with Glassfish server */
+    /*@Override
+    public void init() throws ServletException {
+        try {
+            InitialContext ctx = new InitialContext();
+            pool = (DataSource) ctx.lookup("jdbc/lms");
+        } catch (NamingException e) {
+            throw new RuntimeException(e);
+        }
+    }*/
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         /* To Check if methods are working (10) */ /* Step 01 */
@@ -30,7 +50,9 @@ public class StudentServlet extends HttpServlet2 {
     private void loadAllStudents(HttpServletResponse response) throws IOException {
         /*response.getWriter().println("<h1>All Members</h1>");*/ /* Step 03 */
         try {
-            ConnectionPool pool = (ConnectionPool) getServletContext().getAttribute("pool");
+//            ConnectionPool pool = (ConnectionPool) getServletContext().getAttribute("pool");  /* Remove at Line 26 */
+            BasicDataSource pool = (BasicDataSource) getServletContext().getAttribute("pool");  /* Remove at Line 28 */
+
             Connection connection = pool.getConnection();
             /* Line 23 */
             /*Class.forName("com.mysql.cj.jdbc.Driver");
@@ -49,7 +71,8 @@ public class StudentServlet extends HttpServlet2 {
                     students.add(dto);
                 }
 
-                pool.releaseConnection(connection);
+//                pool.releaseConnection(connection);   /* Remove at Line 26 */
+            connection.close();
 
                 Jsonb jsonb = JsonbBuilder.create();
                 String json = jsonb.toJson(students);

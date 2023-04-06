@@ -6,6 +6,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/* We don't need this when using Apache Commons DBCP */
+
 public class ConnectionPool {
     /* This connection pool is important for interviews */
     private List<Connection> pool = new ArrayList<>();
