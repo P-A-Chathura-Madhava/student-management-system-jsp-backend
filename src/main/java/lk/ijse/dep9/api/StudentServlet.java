@@ -184,14 +184,14 @@ public class StudentServlet extends HttpServlet2 {
 
         Matcher matcher = Pattern.compile("^/([A-Fa-f0-9]{8}(-[A-Fa-f0-9]{4}){3}-[A-Fa-f0-9]{12})/?$").matcher(request.getPathInfo());
         if (matcher.matches()) {
-            deleteMember(matcher.group(1), response);
+            deleteStudent(matcher.group(1), response);
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Invalid member id");
         }
 
     }
 
-    private void deleteMember(String memberId, HttpServletResponse response) throws IOException {
+    private void deleteStudent(String memberId, HttpServletResponse response) throws IOException {
         try (Connection connection = pool.getConnection()) {
             PreparedStatement stm = connection.prepareStatement("DELETE FROM student WHERE id=?");
             stm.setString(1, memberId);
@@ -206,8 +206,57 @@ public class StudentServlet extends HttpServlet2 {
         }
     }
     @Override
-    protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPatch(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         /* To Check if methods are working (10) */
-        resp.getWriter().println("StudentServlet : doPatch()");
+//        resp.getWriter().println("StudentServlet : doPatch()");
+        if (request.getPathInfo() == null || request.getPathInfo().equals("/")) {
+            response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED);
+        }
+
+        Matcher matcher = Pattern.
+                compile("^/([A-Fa-f0-9]{8}(-[A-Fa-f0-9]{4}){3}-[A-Fa-f0-9]{12})/?$")
+                .matcher(request.getPathInfo());
+        if (matcher.matches()) {
+            updateStudent(matcher.group(1), request, response);
+        } else {
+            response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED);
+        }
+    }
+
+    private void updateStudent(String memberId, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        try {
+            if (request.getContentType() == null || !request.getContentType().startsWith("application/json")) {
+                throw new JsonbException("Invalid JSON");
+            }
+            StudentDTO student = JsonbBuilder.create().fromJson(request.getReader(), StudentDTO.class);
+
+            if (student.getId() == null || !memberId.equalsIgnoreCase(student.getId())) {
+                throw new JsonbException("Id is empty or invalid");
+            } else if (student.getName() == null || !student.getName().matches("[A-Za-z ]+")) {
+                throw new JsonbException("Name is empty or invalid");
+            } else if (student.getContact() == null || !student.getContact().matches("\\d{3}-\\d{7}")) {
+                throw new JsonbException("Contact is empty or invalid");
+            } else if (student.getAddress() == null || !student.getAddress().matches("^[A-Za-z0-9|,.:;#\\/\\\\ -]+$")) {
+                throw new JsonbException("Address is empty or invalid");
+            }
+
+            try (Connection connection = pool.getConnection()) {
+                PreparedStatement stm = connection.prepareStatement("UPDATE student SET name=?, address=?, contact=? WHERE id=?");
+                stm.setString(1, student.getName());
+                stm.setString(2, student.getAddress());
+                stm.setString(3, student.getContact());
+                stm.setString(4, student.getId());
+
+                if (stm.executeUpdate() == 1) {
+                    response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                } else {
+                    response.sendError(HttpServletResponse.SC_NOT_FOUND, "Student does not exists");
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        } catch (JsonbException e) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST);
+        }
     }
 }
