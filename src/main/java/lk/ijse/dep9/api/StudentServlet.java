@@ -3,6 +3,7 @@ package lk.ijse.dep9.api;
 import jakarta.annotation.Resource;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbException;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
@@ -17,6 +18,9 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @WebServlet(name = "StudentServlet", value = "/students/*", loadOnStartup = 0)
 public class StudentServlet extends HttpServlet2 {
@@ -123,9 +127,9 @@ public class StudentServlet extends HttpServlet2 {
     }
 
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         /* To Check if methods are working (10) */
-        resp.getWriter().println("StudentServlet : doDelete()");
+        response.getWriter().println("StudentServlet : doDelete()");
     }
 
     @Override
