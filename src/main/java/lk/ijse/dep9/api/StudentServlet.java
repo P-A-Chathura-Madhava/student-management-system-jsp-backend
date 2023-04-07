@@ -123,7 +123,53 @@ public class StudentServlet extends HttpServlet2 {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         /* To Check if methods are working (10) */
-        response.getWriter().println("StudentServlet : doPost()");
+//        response.getWriter().println("StudentServlet : doPost()");
+        if (request.getPathInfo() == null || request.getPathInfo().equals("/")) {
+            try {
+                if (request.getContentType() == null || !request.getContentType().startsWith("application/json")) {
+                    throw new JsonbException("Invalid JSON");
+                }
+
+                StudentDTO student = JsonbBuilder.create().
+                        fromJson(request.getReader(), StudentDTO.class);
+
+                if (student.getName() == null ||
+                        !student.getName().matches("[A-Za-z ]+")) {
+                    throw new JsonbException("Name is empty or invalid");
+                } else if (student.getContact() == null ||
+                        !student.getContact().matches("\\d{3}-\\d{7}")) {
+                    throw new JsonbException("Contact is empty or invalid");
+                } else if (student.getAddress() == null ||
+                        !student.getAddress().matches("^[A-Za-z0-9|,.:;#\\/\\\\ -]+$")) {
+                    throw new JsonbException("Address is empty or invalid");
+                }
+
+                try (Connection connection = pool.getConnection()) {
+                    student.setId(UUID.randomUUID().toString());
+                    PreparedStatement stm = connection.
+                            prepareStatement("INSERT INTO student (id, name, address, contact) VALUES (?, ?, ?, ?)");
+                    stm.setString(1, student.getId());
+                    stm.setString(2, student.getName());
+                    stm.setString(3, student.getAddress());
+                    stm.setString(4, student.getContact());
+
+                    int affectedRows = stm.executeUpdate();
+                    if (affectedRows == 1) {
+                        response.setStatus(HttpServletResponse.SC_CREATED);
+                        response.setContentType("application/json");
+                        JsonbBuilder.create().toJson(student, response.getWriter());
+                    } else {
+                        throw new SQLException("Something went wrong");
+                    }
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
+            } catch (JsonbException e) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
+        } else {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
     }
 
     @Override
