@@ -8,12 +8,9 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 import lk.ijse.dep9.api.util.HttpServlet2;
-import lk.ijse.dep9.db.ConnectionPool;
 import lk.ijse.dep9.dto.StudentDTO;
 import org.apache.commons.dbcp2.BasicDataSource;
 
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.sql.*;
@@ -28,93 +25,38 @@ public class StudentServlet extends HttpServlet2 {
     @Resource(lookup = "java:/comp/env/jdbc/sms")
     private DataSource pool;
 
-    /* Only use with Glassfish server */
-    /*@Override
-    public void init() throws ServletException {
-        try {
-            InitialContext ctx = new InitialContext();
-            pool = (DataSource) ctx.lookup("jdbc/lms");
-        } catch (NamingException e) {
-            throw new RuntimeException(e);
-        }
-    }*/
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        /* To Check if methods are working (10) */ /* Step 01 */
-//        response.getWriter().println("StudentServlet : doGet()");
-        if (request.getPathInfo() == null || request.getPathInfo().equals("/")) { /* /students || /students/ */
-            /* response.getWriter().println("<h1>All Members</h1>"); */ /* Step 02 */
+        if (request.getPathInfo() == null || request.getPathInfo().equals("/")) {
             loadAllStudents(response);
-        }else {
+        } else {
             response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED);
         }
     }
 
     private void loadAllStudents(HttpServletResponse response) throws IOException {
-        /*response.getWriter().println("<h1>All Members</h1>");*/ /* Step 03 */
         try {
-//            ConnectionPool pool = (ConnectionPool) getServletContext().getAttribute("pool");  /* Remove at Line 26 */
             BasicDataSource pool = (BasicDataSource) getServletContext().getAttribute("pool");  /* Remove at Line 28 */
 
             Connection connection = pool.getConnection();
-            /* Line 23 */
-            /*Class.forName("com.mysql.cj.jdbc.Driver");
-            try(Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/sms", "root", "123@Ctech")) {*/
+            Statement stm = connection.createStatement();
+            ResultSet rst = stm.executeQuery("SELECT * FROM student");
 
-                Statement stm = connection.createStatement();
-                ResultSet rst = stm.executeQuery("SELECT * FROM student");
-
-                ArrayList<StudentDTO> students = new ArrayList<>();
-                while (rst.next()){
-                    String id = rst.getString("id");
-                    String name = rst.getString("name");
-                    String address = rst.getString("address");
-                    String contact = rst.getString("contact");
-                    StudentDTO dto = new StudentDTO(id, name, address, contact);
-                    students.add(dto);
-                }
-
-//                pool.releaseConnection(connection);   /* Remove at Line 26 */
+            ArrayList<StudentDTO> students = new ArrayList<>();
+            while (rst.next()) {
+                String id = rst.getString("id");
+                String name = rst.getString("name");
+                String address = rst.getString("address");
+                String contact = rst.getString("contact");
+                StudentDTO dto = new StudentDTO(id, name, address, contact);
+                students.add(dto);
+            }
             connection.close();
 
-                Jsonb jsonb = JsonbBuilder.create();
-                String json = jsonb.toJson(students);
-                jsonb.toJson(students, response.getWriter());
-
-
-                /*Step 05*/
-                /*response.setContentType("application/json");
-                response.getWriter().println(json);*/
-
-
-                /* Step 04 */
-                /*StringBuilder sb = new StringBuilder();
-                sb.append("[");
-                while (rst.next()){
-                    String id = rst.getString("id");
-                    String name = rst.getString("name");
-                    String address = rst.getString("address");
-                    String contact = rst.getString("contact");
-                    *//*response.getWriter().printf("<h1>ID : %s, NAME : %s, ADDRESS : %s, CONTACT : %s</h1>", id, name, address, contact);*//*
-                    String jsonobj = "{\n" +
-                            "  \"id\": \"" + id + "\",\n" +
-                            "  \"name\": \"" + name + "\",\n" +
-                            "  \"address\": \"" + address + "\",\n" +
-                            "  \"contact\": \"" + contact + "\"\n" +
-                            "}";
-                    sb.append(jsonobj).append(",");
-                }
-                sb.deleteCharAt(sb.length()-1);
-                sb.append("]");
-                response.setContentType("application/json");
-                response.getWriter().println(sb);*/
-
-            /*} catch (SQLException e) {
-                throw new RuntimeException(e);*/
-//            }
+            Jsonb jsonb = JsonbBuilder.create();
+            String json = jsonb.toJson(students);
+            jsonb.toJson(students, response.getWriter());
         } catch (SQLException e) {
-            /*throw new RuntimeException(e);*/
             e.printStackTrace();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to load members");
         }
@@ -122,8 +64,6 @@ public class StudentServlet extends HttpServlet2 {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        /* To Check if methods are working (10) */
-//        response.getWriter().println("StudentServlet : doPost()");
         if (request.getPathInfo() == null || request.getPathInfo().equals("/")) {
             try {
                 if (request.getContentType() == null || !request.getContentType().startsWith("application/json")) {
@@ -174,10 +114,7 @@ public class StudentServlet extends HttpServlet2 {
 
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        /* To Check if methods are working (10) */
-//        response.getWriter().println("StudentServlet : doDelete()");
         if (request.getPathInfo() == null || request.getPathInfo().equals("/")) {
-//            response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED);
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Must include member id");
             return;
         }
@@ -205,10 +142,9 @@ public class StudentServlet extends HttpServlet2 {
             throw new RuntimeException(e);
         }
     }
+
     @Override
     protected void doPatch(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        /* To Check if methods are working (10) */
-//        resp.getWriter().println("StudentServlet : doPatch()");
         if (request.getPathInfo() == null || request.getPathInfo().equals("/")) {
             response.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED);
         }

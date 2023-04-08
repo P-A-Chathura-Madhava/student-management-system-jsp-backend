@@ -16,7 +16,6 @@ public class CorsFilter extends HttpFilter {
     @Override
     public void init() {
         String origin = getFilterConfig().getInitParameter("origins");
-//        origins = origin.split(", ");
     }
 
     @Override
